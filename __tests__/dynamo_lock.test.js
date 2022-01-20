@@ -10,6 +10,14 @@ const { EnvironmentCredentials } = require('aws-sdk');
 AWSMock.setSDKInstance(AWS);
 lock.setDynamoDelegate(new AWS.DynamoDB());
 AWSMock.mock("DynamoDB", 'putItem', null);
+AWSMock.mock("DynamoDB", 'describeTable', (params, callback) => {      
+  callback(null, {Table: { ItemCount: 0}, sk: 'bar'});  //Provide [Errors, Return Values] To Object That Calls AWS Mocker
+});
+AWSMock.mock("DynamoDB", 'describeTimeToLive', (params, callback) => {      
+  callback(null, {TimeToLiveDescription: { TimeToLiveStatus: "ENABLED"}, sk: 'bar'});  //Provide [Errors, Return Values] To Object That Calls AWS Mocker
+});
+
+
 
 jest.setTimeout(30000)
 
@@ -119,7 +127,7 @@ test('obtainLock only calls for TTL Settings on first invocation and will only c
     readSpy(params, null);
     callback(null, {TimeToLiveDescription: {   TimeToLiveStatus: "DISABLED"   }});  //Provide [Errors, Return Values] To Object That Calls AWS Mocker
   });
-  AWSMock.remock('DynamoDB', 'updateTimeToLive', (params, callback) => {      
+  AWSMock.mock('DynamoDB', 'updateTimeToLive', (params, callback) => {      
     updateSpy(params, null);
     callback(null, {});  //Provide [Errors, Return Values] To Object That Calls AWS Mocker
   });

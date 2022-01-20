@@ -20,7 +20,8 @@
         "babel-jest": "^27.4.6",
         "debug": "^4.3.3",
         "lodash": "^4.17.21",
-        "ts-jest": "^27.1.3"
+        "ts-jest": "^27.1.3",
+        "uuid": "latest"
     },
     "main": "index.js",
     "type": "module",
