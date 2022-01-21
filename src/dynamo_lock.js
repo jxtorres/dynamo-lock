@@ -41,30 +41,22 @@ class DynamoLock {
                     {
                    AttributeName: "LockName", 
                    AttributeType: "S"
-                  }, 
-                    {
-                   AttributeName: "ExpirationTime", 
-                   AttributeType: "N"
-                  },
-                  {
-                    AttributeName: "LockHolder", 
-                    AttributeType: "S"
-                   }
+                  }
                  ], 
                  KeySchema: [
                     {
                    AttributeName: "LockName", 
                    KeyType: "HASH"
                   }
+                  
                  ]
             };
             await (DynamoDB.createTable(updateParams)).promise();
         }
         
-
-
     }
 
+    //Timeout of TTL is eventually guaranteed on lock usage but not immediately guaranteed when the lock is created.
     async __ensureTTLSettings(){
         // let DynamoDB = new AWS.DynamoDB();
         let DynamoDB = DynamoLock.#dynamoDelegate;
@@ -73,19 +65,23 @@ class DynamoLock {
         var params = {
             TableName: 'dynamo_locks' /* required */
         };
-        let data = await (DynamoDB.describeTimeToLive(params).promise());
-        if(data.TimeToLiveDescription.TimeToLiveStatus == "DISABLED"){
-            var updateParams = {
-                TableName: 'dynamo_locks', /* required */
-                TimeToLiveSpecification: { /* required */
-                    AttributeName: 'ExpirationTime', /* required */
-                    Enabled: true /* required */
-                }
-            };
-            await (DynamoDB.updateTimeToLive(updateParams)).promise();
+        try {
+            let data = await (DynamoDB.describeTimeToLive(params).promise());
+            if(data.TimeToLiveDescription.TimeToLiveStatus == "DISABLED"){
+                var updateParams = {
+                    TableName: 'dynamo_locks', /* required */
+                    TimeToLiveSpecification: { /* required */
+                        AttributeName: 'ExpirationTime', /* required */
+                        Enabled: true /* required */
+                    }
+                };
+                await (DynamoDB.updateTimeToLive(updateParams)).promise();
+            }
+            else if(data.TimeToLiveDescription.TimeToLiveStatus == "ENABLED")
+                this.hasCheckedTTL = true;
+        } catch(error){
+            console.log("TTL Settings could not be confirmed, will be checked again at next acquisition of lock");
         }
-        this.hasCheckedTTL = true;
-
         
 
     }
@@ -125,7 +121,15 @@ class DynamoLock {
                 }
             }, 
             TableName: 'dynamo_locks',
-            ConditionExpression: 'attribute_not_exists(LockHolder) OR size(LockHolder) = 0'
+            ConditionExpression: 'attribute_not_exists(LockHolder) OR size(LockHolder) = :val1 OR :currEpoch >= ExpirationTime',
+            ExpressionAttributeValues: {
+                ":val1" :{
+                    N: "0"
+                },
+                ":currEpoch" : {
+                    N: Math.ceil((new Date()).getTime()/1000) + ""
+                }
+            }
             };
         //dynamodb.putItem(params);
         try{
@@ -133,6 +137,7 @@ class DynamoLock {
             this.isHoldingLock = true;
             return true;
         } catch(error) {
+            console.log(error, params);
             return false;
         }
 
@@ -168,7 +173,13 @@ class DynamoLock {
                 }
             }, 
             TableName: 'dynamo_locks',
-            ConditionExpression: 'contains(LockHolder, ' + this.uuid  + ')'
+            ConditionExpression: 'contains(LockHolder, :guid)',
+            ExpressionAttributeValues: {
+                ":guid" :{
+                    S: "" + this.uuid
+                }
+                
+            }
             };
         //dynamodb.putItem(params);
         try{
