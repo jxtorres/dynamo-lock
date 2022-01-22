@@ -266,7 +266,12 @@ class DynamoLock {
         },
       },
       TableName: "dynamo_locks",
-      ConditionExpression: "contains(LockHolder, " + this.uuid + ")",
+      ConditionExpression: "contains(LockHolder, :guid)",
+      ExpressionAttributeValues: {
+        ":guid": {
+          S: "" + this.uuid,
+        },
+      }
     };
     //dynamodb.putItem(params);
     try {
