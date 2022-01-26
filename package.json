@@ -1,7 +1,7 @@
 {
     "name": "@jxtorres/dynamo-lock",
     "description": "a lock built on dynamoDB",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "devDependencies": {
         "@jest/globals": "^27.3.1",
         "aws-sdk": "latest",
@@ -24,7 +24,6 @@
         "uuid": "latest"
     },
     "main": "index.js",
-    "type": "module",
     "scripts": {
         "test": "npx jest --bail"
     },
