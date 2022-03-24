@@ -1,7 +1,7 @@
 {
     "name": "@jxtorres/dynamo-lock",
     "description": "a lock built on dynamoDB",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "devDependencies": {
         "@jest/globals": "^27.3.1",
         "aws-sdk": "latest",

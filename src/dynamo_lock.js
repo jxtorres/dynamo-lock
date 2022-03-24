@@ -166,7 +166,12 @@ class DynamoLock {
       this.isHoldingLock = true;
       return true;
     } catch (error) {
-      console.log(error, params);
+
+      if(error.code == 'ConditionalCheckFailedException'){
+        console.log("Condition Failed, obtain lock attempt: " + "dynamo_lock_" + this.lockName);
+      }
+      else
+        console.log(error, params);
       return false;
     }
   }
